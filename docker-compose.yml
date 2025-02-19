@@ -6,11 +6,34 @@ services:
       - .:/app
     working_dir: /app
     command: mvn clean package
+    container_name: maven_builder
+
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypass
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    container_name: postgres_db
 
   backend:
     build: .
+    container_name: tomcat_backend
     ports:
-      - "8080:8080" # server app
-      - "8000:8000" # debug
+      - "8080:8080"
+      - "8000:8000"
     depends_on:
       - maven
+      - postgres
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/myapp
+      DB_USER: myuser
+      DB_PASSWORD: mypass
+
+volumes:
+  postgres_data:
